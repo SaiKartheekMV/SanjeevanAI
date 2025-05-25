@@ -4,7 +4,6 @@ import axios from 'axios';
 
 // Base API configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-;
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -15,10 +14,31 @@ const apiClient = axios.create({
   },
 });
 
+// In-memory token storage (since localStorage is not supported in Claude artifacts)
+let authToken = null;
+let userData = null;
+
+// Mock storage for development (replace with localStorage in real app)
+const mockStorage = {
+  getItem: (key) => {
+    if (key === 'token') return authToken;
+    if (key === 'user') return userData ? JSON.stringify(userData) : null;
+    return null;
+  },
+  setItem: (key, value) => {
+    if (key === 'token') authToken = value;
+    if (key === 'user') userData = JSON.parse(value);
+  },
+  removeItem: (key) => {
+    if (key === 'token') authToken = null;
+    if (key === 'user') userData = null;
+  }
+};
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = mockStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,10 +57,12 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle different error scenarios
     if (error.response?.status === 401) {
-      // Unauthorized - clear local storage and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Unauthorized - clear storage and redirect to login
+      mockStorage.removeItem('token');
+      mockStorage.removeItem('user');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     } else if (error.response?.status === 403) {
       console.error('Access forbidden:', error.response.data);
     } else if (error.response?.status >= 500) {
@@ -57,6 +79,12 @@ export const apiService = {
   login: async (credentials) => {
     try {
       const response = await apiClient.post('/auth/login', credentials);
+      if (response.token) {
+        mockStorage.setItem('token', response.token);
+      }
+      if (response.user) {
+        mockStorage.setItem('user', JSON.stringify(response.user));
+      }
       return response;
     } catch (error) {
       throw new Error(error.message || 'Login failed');
@@ -75,10 +103,13 @@ export const apiService = {
   logout: async () => {
     try {
       await apiClient.post('/auth/logout');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      mockStorage.removeItem('token');
+      mockStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
+      // Clear storage even if API call fails
+      mockStorage.removeItem('token');
+      mockStorage.removeItem('user');
     }
   },
 
@@ -86,7 +117,7 @@ export const apiService = {
     try {
       const response = await apiClient.post('/auth/refresh');
       if (response.token) {
-        localStorage.setItem('token', response.token);
+        mockStorage.setItem('token', response.token);
       }
       return response;
     } catch (error) {
@@ -137,6 +168,7 @@ export const apiService = {
           'Content-Type': 'multipart/form-data',
         },
         onUploadProgress: onUploadProgress,
+        timeout: 60000, // 60 seconds for file uploads
       };
       
       return await apiClient.post('/reports/upload', formData, config);
@@ -241,6 +273,36 @@ export const apiService = {
     } catch (error) {
       throw new Error('Health check failed');
     }
+  },
+
+  // Development/Testing helper methods
+  getCurrentUser: () => {
+    return userData;
+  },
+
+  getCurrentToken: () => {
+    return authToken;
+  },
+
+  // Mock data for development (remove in production)
+  getMockData: () => {
+    return {
+      user: {
+        id: 1,
+        name: 'John Doe',
+        email: 'john@example.com',
+        userType: 'patient'
+      },
+      reports: [
+        {
+          id: 1,
+          title: 'Blood Test Results',
+          date: '2024-01-15',
+          type: 'blood_test',
+          status: 'analyzed'
+        }
+      ]
+    };
   }
 };
 

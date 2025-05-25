@@ -4,15 +4,22 @@ import React from 'react';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { 
+      hasError: false, 
+      error: null, 
+      errorInfo: null 
+    };
   }
 
   static getDerivedStateFromError(error) {
+    // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    // Log the error details
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    
     this.setState({
       error: error,
       errorInfo: errorInfo
@@ -21,62 +28,52 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      // Custom error UI
       return (
-        <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-          <div className="container">
-            <div className="row justify-content-center">
-              <div className="col-lg-6">
-                <div className="card shadow-lg border-0">
-                  <div className="card-header bg-danger text-white text-center py-3">
-                    <h4 className="mb-0">
-                      <i className="fas fa-exclamation-triangle me-2"></i>
-                      Something went wrong
-                    </h4>
-                  </div>
-                  <div className="card-body p-4">
-                    <div className="text-center mb-4">
-                      <i className="fas fa-bug fa-3x text-muted mb-3"></i>
-                      <h5>We're sorry, but something went wrong</h5>
-                      <p className="text-muted">
-                        The application encountered an unexpected error. Please try refreshing the page.
-                      </p>
-                    </div>
-                    
-                    <div className="d-grid gap-2">
-                      <button 
-                        className="btn btn-primary"
-                        onClick={() => window.location.reload()}
-                      >
-                        <i className="fas fa-redo me-2"></i>
-                        Refresh Page
-                      </button>
-                      <button 
-                        className="btn btn-outline-secondary"
-                        onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
-                      >
-                        Try Again
-                      </button>
-                    </div>
-
-                    {/* Show error details in development */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <details className="mt-4">
-                        <summary className="btn btn-outline-warning btn-sm">
-                          Show Error Details (Development)
-                        </summary>
-                        <div className="mt-2">
-                          <div className="alert alert-warning">
-                            <strong>Error:</strong> {this.state.error && this.state.error.toString()}
-                          </div>
-                          <div className="alert alert-info">
-                            <strong>Component Stack:</strong>
-                            <pre className="small mt-2">{this.state.errorInfo.componentStack}</pre>
-                          </div>
-                        </div>
-                      </details>
-                    )}
-                  </div>
+        <div className="container mt-5">
+          <div className="row justify-content-center">
+            <div className="col-md-8">
+              <div className="alert alert-danger">
+                <h4 className="alert-heading">
+                  <i className="fas fa-exclamation-triangle me-2"></i>
+                  Something went wrong
+                </h4>
+                <p>
+                  An unexpected error occurred. Please try refreshing the page.
+                </p>
+                <hr />
+                <div className="d-flex gap-2">
+                  <button 
+                    className="btn btn-outline-danger"
+                    onClick={() => window.location.reload()}
+                  >
+                    <i className="fas fa-refresh me-2"></i>
+                    Refresh Page
+                  </button>
+                  <button 
+                    className="btn btn-outline-secondary"
+                    onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+                  >
+                    Try Again
+                  </button>
                 </div>
+                
+                {/* Show error details in development */}
+                {process.env.NODE_ENV === 'development' && this.state.error && (
+                  <details className="mt-3">
+                    <summary className="text-muted">Error Details (Development Only)</summary>
+                    <pre className="mt-2 p-2 bg-light border rounded small">
+                      <strong>Error:</strong> {this.state.error.toString()}
+                      {this.state.errorInfo && this.state.errorInfo.componentStack && (
+                        <>
+                          <br />
+                          <strong>Component Stack:</strong>
+                          {this.state.errorInfo.componentStack}
+                        </>
+                      )}
+                    </pre>
+                  </details>
+                )}
               </div>
             </div>
           </div>
@@ -84,6 +81,7 @@ class ErrorBoundary extends React.Component {
       );
     }
 
+    // Render children normally if no error
     return this.props.children;
   }
 }

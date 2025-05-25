@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../App';
 import { apiService } from '../services/api';
@@ -19,33 +19,7 @@ const Dashboard = () => {
   const [chartData, setChartData] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState('30'); // days
 
-  useEffect(() => {
-    initializeDashboard();
-  }, []);
-
-  useEffect(() => {
-    if (reports.length > 0) {
-      calculateStats();
-      prepareChartData();
-    }
-  }, [calculateStats, prepareChartData, reports, selectedPeriod]);
-
-  const initializeDashboard = async () => {
-    try {
-      setLoading(true);
-      await fetchUserReports();
-    } catch (error) {
-      console.error('Dashboard initialization error:', error);
-      addNotification({
-        type: 'error',
-        message: 'Failed to load dashboard data'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateStats = () => {
+  const calculateStats = useCallback(() => {
     if (!reports || reports.length === 0) return;
 
     const sortedReports = [...reports].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
@@ -77,9 +51,9 @@ const Dashboard = () => {
       riskLevel,
       trends: recentReports.slice(0, 5)
     });
-  };
+  }, [reports, selectedPeriod]);
 
-  const prepareChartData = () => {
+  const prepareChartData = useCallback(() => {
     if (!reports || reports.length === 0) return;
 
     const sortedReports = [...reports]
@@ -94,7 +68,33 @@ const Dashboard = () => {
     }));
 
     setChartData(data);
+  }, [reports]);
+
+  const initializeDashboard = async () => {
+    try {
+      setLoading(true);
+      await fetchUserReports();
+    } catch (error) {
+      console.error('Dashboard initialization error:', error);
+      addNotification({
+        type: 'error',
+        message: 'Failed to load dashboard data'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    initializeDashboard();
+  }, []);
+
+  useEffect(() => {
+    if (reports.length > 0) {
+      calculateStats();
+      prepareChartData();
+    }
+  }, [calculateStats, prepareChartData, reports, selectedPeriod]);
 
   const getRiskBadgeClass = (risk) => {
     switch (risk) {

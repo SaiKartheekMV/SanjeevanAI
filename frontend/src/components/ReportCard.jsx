@@ -3,16 +3,32 @@ import React, { useState } from 'react';
 const ReportCard = ({ report, onDelete, onView, onDownload }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Add default props and safety checks
+  if (!report) {
+    return (
+      <div className="card border-0 shadow-sm mb-3">
+        <div className="card-body text-center">
+          <p className="text-muted">Report data not available</p>
+        </div>
+      </div>
+    );
+  }
+
   // Format date
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Unknown date';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   // Get status badge class
@@ -28,9 +44,10 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
 
   // Get risk level styling
   const getRiskLevel = (riskScore) => {
-    if (riskScore >= 80) return { class: 'text-danger', text: 'High Risk', icon: 'fas fa-exclamation-triangle' };
-    if (riskScore >= 60) return { class: 'text-warning', text: 'Medium Risk', icon: 'fas fa-exclamation' };
-    if (riskScore >= 40) return { class: 'text-info', text: 'Low Risk', icon: 'fas fa-info-circle' };
+    const score = Number(riskScore) || 0;
+    if (score >= 80) return { class: 'text-danger', text: 'High Risk', icon: 'fas fa-exclamation-triangle' };
+    if (score >= 60) return { class: 'text-warning', text: 'Medium Risk', icon: 'fas fa-exclamation' };
+    if (score >= 40) return { class: 'text-info', text: 'Low Risk', icon: 'fas fa-info-circle' };
     return { class: 'text-success', text: 'Normal', icon: 'fas fa-check-circle' };
   };
 
@@ -47,8 +64,38 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
     return iconMap[type] || 'fas fa-file-medical';
   };
 
+  // Safe string conversion for ID
+  const getReportId = (id) => {
+    if (!id) return 'Unknown';
+    try {
+      const idStr = String(id);
+      return idStr.length > 8 ? `${idStr.substring(0, 8)}...` : idStr;
+    } catch (error) {
+      return 'Unknown';
+    }
+  };
+
   const statusBadge = getStatusBadge(report.status);
   const riskLevel = report.analysis ? getRiskLevel(report.analysis.risk_score) : null;
+
+  // Safe event handlers
+  const handleView = () => {
+    if (onView && typeof onView === 'function') {
+      onView(report);
+    }
+  };
+
+  const handleDownload = () => {
+    if (onDownload && typeof onDownload === 'function') {
+      onDownload(report);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete && typeof onDelete === 'function') {
+      onDelete(report.id);
+    }
+  };
 
   return (
     <div className="card border-0 shadow-sm mb-3 report-card">
@@ -56,10 +103,12 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
         <div className="d-flex align-items-center">
           <i className={`${getReportTypeIcon(report.type)} text-primary me-2`}></i>
           <div>
-            <h6 className="mb-0 fw-bold">{report.title || `${report.type.replace('_', ' ').toUpperCase()} Report`}</h6>
+            <h6 className="mb-0 fw-bold">
+              {report.title || `${(report.type || 'unknown').replace('_', ' ').toUpperCase()} Report`}
+            </h6>
             <small className="text-muted">
               <i className="fas fa-calendar-alt me-1"></i>
-              {formatDate(report.created_at)}
+              {formatDate(report.created_at || report.uploadDate)}
             </small>
           </div>
         </div>
@@ -81,13 +130,13 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
             </button>
             <ul className="dropdown-menu">
               <li>
-                <button className="dropdown-item" onClick={() => onView(report)}>
+                <button className="dropdown-item" onClick={handleView}>
                   <i className="fas fa-eye me-2"></i>View Details
                 </button>
               </li>
               {report.status === 'completed' && (
                 <li>
-                  <button className="dropdown-item" onClick={() => onDownload(report)}>
+                  <button className="dropdown-item" onClick={handleDownload}>
                     <i className="fas fa-download me-2"></i>Download Report
                   </button>
                 </li>
@@ -96,7 +145,7 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
               <li>
                 <button 
                   className="dropdown-item text-danger" 
-                  onClick={() => onDelete(report.id)}
+                  onClick={handleDelete}
                 >
                   <i className="fas fa-trash me-2"></i>Delete
                 </button>
@@ -117,7 +166,7 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
           </div>
           <div className="col-6 col-md-3">
             <div className="text-center">
-              <div className="h5 mb-1 text-info">{report.language?.toUpperCase() || 'EN'}</div>
+              <div className="h5 mb-1 text-info">{(report.language || 'EN').toUpperCase()}</div>
               <small className="text-muted">Language</small>
             </div>
           </div>
@@ -127,7 +176,7 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
                 <div className="text-center">
                   <div className={`h5 mb-1 ${riskLevel.class}`}>
                     <i className={`${riskLevel.icon} me-1`}></i>
-                    {report.analysis.risk_score}%
+                    {report.analysis.risk_score || 0}%
                   </div>
                   <small className="text-muted">Risk Score</small>
                 </div>
@@ -161,15 +210,15 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
             <div className="bg-light rounded p-3">
               <p className="mb-2 text-sm">
                 {isExpanded 
-                  ? report.analysis.summary 
-                  : `${report.analysis.summary?.substring(0, 150)}${report.analysis.summary?.length > 150 ? '...' : ''}`
+                  ? (report.analysis.summary || 'No summary available')
+                  : `${(report.analysis.summary || 'No summary available').substring(0, 150)}${(report.analysis.summary || '').length > 150 ? '...' : ''}`
                 }
               </p>
               
               {isExpanded && (
                 <div className="mt-3">
                   {/* Key Findings */}
-                  {report.analysis.key_findings && (
+                  {report.analysis.key_findings && report.analysis.key_findings.length > 0 && (
                     <div className="mb-3">
                       <h6 className="fw-bold text-primary mb-2">Key Findings:</h6>
                       <ul className="list-unstyled mb-0">
@@ -184,7 +233,7 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
                   )}
                   
                   {/* Recommendations */}
-                  {report.analysis.recommendations && (
+                  {report.analysis.recommendations && report.analysis.recommendations.length > 0 && (
                     <div className="mb-3">
                       <h6 className="fw-bold text-info mb-2">Recommendations:</h6>
                       <ul className="list-unstyled mb-0">
@@ -263,13 +312,13 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
         <div className="d-flex justify-content-between align-items-center">
           <small className="text-muted">
             <i className="fas fa-user-md me-1"></i>
-            ID: {report.id.substring(0, 8)}...
+            ID: {getReportId(report.id)}
           </small>
           
           <div className="d-flex gap-2">
             <button 
               className="btn btn-outline-primary btn-sm"
-              onClick={() => onView(report)}
+              onClick={handleView}
             >
               <i className="fas fa-eye me-1"></i>
               View Full Report
@@ -278,7 +327,7 @@ const ReportCard = ({ report, onDelete, onView, onDownload }) => {
             {report.status === 'completed' && (
               <button 
                 className="btn btn-primary btn-sm"
-                onClick={() => onDownload(report)}
+                onClick={handleDownload}
               >
                 <i className="fas fa-download me-1"></i>
                 Download

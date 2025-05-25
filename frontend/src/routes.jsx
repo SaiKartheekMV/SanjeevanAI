@@ -1,28 +1,131 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Import pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Upload from './pages/Upload';
+// Create a loading component
+const LoadingSpinner = () => (
+  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+    <div className="spinner-border text-primary" role="status">
+      <span className="visually-hidden">Loading...</span>
+    </div>
+  </div>
+);
 
+// Create placeholder components for missing ones
+const PlaceholderComponent = ({ name }) => (
+  <div className="container mt-4">
+    <div className="alert alert-info">
+      <h4 className="alert-heading">Component: {name}</h4>
+      <p>This component is under development. Please create the {name} component in the appropriate directory.</p>
+      <hr />
+      <p className="mb-0">
+        <small>Location: <code>src/pages/{name}.jsx</code></small>
+      </p>
+    </div>
+  </div>
+);
 
+// Lazy load existing components with error boundaries and correct paths
+const Home = lazy(() => 
+  import('./pages/Home.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Home" /> 
+  }))
+);
 
-// Clinic specific pages
-import ClinicDashboard from './pages/clinic/ClinicDashboard';
-import PatientList from './pages/clinic/PatientList';
-import PatientDetail from './pages/clinic/PatientDetail';
+const Login = lazy(() => 
+  import('./pages/Login.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Login" /> 
+  }))
+);
 
-// Government specific pages
-import GovDashboard from './pages/government/GovDashboard';
-import PopulationInsights from './pages/government/PopulationInsights';
-import HealthTrends from './pages/government/HealthTrends';
+const Dashboard = lazy(() => 
+  import('./pages/Dashboard.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Dashboard" /> 
+  }))
+);
 
-// Other pages
-import Settings from './pages/Settings';
-import Help from './pages/help';
-import NotFound from './pages/NotFound';
+const Upload = lazy(() => 
+  import('./pages/Upload.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Upload" /> 
+  }))
+);
+
+const Settings = lazy(() => 
+  import('./pages/Settings.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Settings" /> 
+  }))
+);
+
+const Help = lazy(() => 
+  import('./pages/help.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="Help" /> 
+  }))
+);
+
+const NotFound = lazy(() => 
+  import('./pages/NotFound.jsx').catch(() => ({ 
+    default: () => (
+      <div className="container mt-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6 text-center">
+            <h1 className="display-1 text-muted">404</h1>
+            <h2>Page Not Found</h2>
+            <p className="text-muted">The page you're looking for doesn't exist.</p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => window.history.back()}
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }))
+);
+
+// Lazy load clinic components
+const ClinicDashboard = lazy(() => 
+  import('./pages/clinic/ClinicDashboard.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="ClinicDashboard" /> 
+  }))
+);
+
+const PatientList = lazy(() => 
+  import('./pages/clinic/PatientList.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="PatientList" /> 
+  }))
+);
+
+const PatientDetail = lazy(() => 
+  import('./pages/clinic/PatientDetail.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="PatientDetail" /> 
+  }))
+);
+
+// Lazy load government components
+const GovDashboard = lazy(() => 
+  import('./pages/government/GovDashboard.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="GovDashboard" /> 
+  }))
+);
+
+const PopulationInsights = lazy(() => 
+  import('./pages/government/PopulationInsights.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="PopulationInsights" /> 
+  }))
+);
+
+const HealthTrends = lazy(() => 
+  import('./pages/government/HealthTrends.jsx').catch(() => ({ 
+    default: () => <PlaceholderComponent name="HealthTrends" /> 
+  }))
+);
+
+// Create fallback components for missing imports that don't have files yet
+const Register = () => <PlaceholderComponent name="Register" />;
+const Profile = () => <PlaceholderComponent name="Profile" />;
+const Reports = () => <PlaceholderComponent name="Reports" />;
+const ReportDetail = () => <PlaceholderComponent name="ReportDetail" />;
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, requiredRole = null }) => {
@@ -34,7 +137,11 @@ const ProtectedRoute = ({ children, user, requiredRole = null }) => {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      {children}
+    </Suspense>
+  );
 };
 
 // Role-based Route Component
@@ -47,122 +154,128 @@ const RoleBasedRoute = ({ children, user, allowedRoles = [] }) => {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return children;
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      {children}
+    </Suspense>
+  );
 };
 
 // Main Routes Component
 const AppRoutes = ({ user }) => {
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route 
-        path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Home />} 
-      />
-      <Route 
-        path="/login" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
-      />
-      <Route 
-        path="/register" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
-      />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {/* Public Routes */}
+        <Route 
+          path="/" 
+          element={user ? <Navigate to="/dashboard" replace /> : <Home />} 
+        />
+        <Route 
+          path="/login" 
+          element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
+        />
+        <Route 
+          path="/register" 
+          element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
+        />
 
-      {/* Protected Routes - Common for all users */}
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute user={user}>
-            {user?.userType === 'clinic' ? <ClinicDashboard /> :
-             user?.userType === 'government' ? <GovDashboard /> :
-             <Dashboard />}
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/upload" 
-        element={
-          <ProtectedRoute user={user}>
-            <Upload />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute user={user}>
-            <Profile />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/settings" 
-        element={
-          <ProtectedRoute user={user}>
-            <Settings />
-          </ProtectedRoute>
-        } 
-      />
+        {/* Protected Routes - Common for all users */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute user={user}>
+              {user?.userType === 'clinic' ? <ClinicDashboard /> :
+               user?.userType === 'government' ? <GovDashboard /> :
+               <Dashboard />}
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/upload" 
+          element={
+            <ProtectedRoute user={user}>
+              <Upload />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute user={user}>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute user={user}>
+              <Settings />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* Patient specific routes */}
-      <Route 
-        path="/reports" 
-        element={
-          <ProtectedRoute user={user} requiredRole="patient">
-            <Reports />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/reports/:id" 
-        element={
-          <ProtectedRoute user={user}>
-            <ReportDetail />
-          </ProtectedRoute>
-        } 
-      />
+        {/* Patient specific routes */}
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute user={user} requiredRole="patient">
+              <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/reports/:id" 
+          element={
+            <ProtectedRoute user={user}>
+              <ReportDetail />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* Clinic specific routes */}
-      <Route 
-        path="/clinic/*" 
-        element={
-          <RoleBasedRoute user={user} allowedRoles={['clinic']}>
-            <Routes>
-              <Route path="dashboard" element={<ClinicDashboard />} />
-              <Route path="patients" element={<PatientList />} />
-              <Route path="patients/:id" element={<PatientDetail />} />
-              <Route path="*" element={<Navigate to="/clinic/dashboard" replace />} />
-            </Routes>
-          </RoleBasedRoute>
-        } 
-      />
+        {/* Clinic specific routes */}
+        <Route 
+          path="/clinic/*" 
+          element={
+            <RoleBasedRoute user={user} allowedRoles={['clinic']}>
+              <Routes>
+                <Route path="dashboard" element={<ClinicDashboard />} />
+                <Route path="patients" element={<PatientList />} />
+                <Route path="patients/:id" element={<PatientDetail />} />
+                <Route path="*" element={<Navigate to="/clinic/dashboard" replace />} />
+              </Routes>
+            </RoleBasedRoute>
+          } 
+        />
 
-      {/* Government specific routes */}
-      <Route 
-        path="/government/*" 
-        element={
-          <RoleBasedRoute user={user} allowedRoles={['government']}>
-            <Routes>
-              <Route path="dashboard" element={<GovDashboard />} />
-              <Route path="population" element={<PopulationInsights />} />
-              <Route path="trends" element={<HealthTrends />} />
-              <Route path="*" element={<Navigate to="/government/dashboard" replace />} />
-            </Routes>
-          </RoleBasedRoute>
-        } 
-      />
+        {/* Government specific routes */}
+        <Route 
+          path="/government/*" 
+          element={
+            <RoleBasedRoute user={user} allowedRoles={['government']}>
+              <Routes>
+                <Route path="dashboard" element={<GovDashboard />} />
+                <Route path="population" element={<PopulationInsights />} />
+                <Route path="trends" element={<HealthTrends />} />
+                <Route path="*" element={<Navigate to="/government/dashboard" replace />} />
+              </Routes>
+            </RoleBasedRoute>
+          } 
+        />
 
-      {/* Help and Support */}
-      <Route path="/help" element={<Help />} />
+        {/* Help and Support */}
+        <Route path="/help" element={<Help />} />
 
-      {/* 404 and Catch-all */}
-      <Route path="/404" element={<NotFound />} />
-      <Route path="*" element={<Navigate to="/404" replace />} />
-    </Routes>
+        {/* 404 and Catch-all */}
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 

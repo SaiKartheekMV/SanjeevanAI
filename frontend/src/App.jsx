@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Import Bootstrap JS only if needed (comment out if causing issues)
@@ -11,12 +12,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
-// Pages
-import Home from './pages/Home';
-import Upload from './pages/Upload';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-
+// Import the routing system
+import AppRoutes from './routes.jsx';
 // API service - with error handling
 let apiService;
 try {
@@ -183,14 +180,6 @@ function App() {
     error
   };
 
-  // Protected Route Component
-  const ProtectedRoute = ({ children }) => {
-    if (!user) {
-      return <Navigate to="/login" replace />;
-    }
-    return children;
-  };
-
   // Show loading spinner during app initialization
   if (loading) {
     return (
@@ -229,7 +218,7 @@ function App() {
     <AppContext.Provider value={contextValue}>
       <Router>
         <div className="App min-vh-100 d-flex flex-column">
-          {/* Navigation */}
+          {/* Navigation - Show for all authenticated users */}
           {user && <Navbar />}
           
           {/* Notifications */}
@@ -254,43 +243,12 @@ function App() {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* Main Content - Use the comprehensive routing system */}
           <main className="flex-grow-1">
-            <Routes>
-              {/* Public Routes */}
-              <Route 
-                path="/" 
-                element={user ? <Navigate to="/dashboard" replace /> : <Home />} 
-              />
-              <Route 
-                path="/login" 
-                element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
-              />
-
-              {/* Protected Routes */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/upload" 
-                element={
-                  <ProtectedRoute>
-                    <Upload />
-                  </ProtectedRoute>
-                } 
-              />
-
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppRoutes user={user} />
           </main>
 
-          {/* Footer */}
+          {/* Footer - Show for all authenticated users */}
           {user && <Footer />}
         </div>
       </Router>

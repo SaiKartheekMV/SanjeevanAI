@@ -2,29 +2,27 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Import pages
-import Home from '../pages/Home';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import Dashboard from '../pages/Dashboard';
-import Upload from '../pages/Upload';
-import Profile from '../pages/Profile';
-import Reports from '../pages/Reports';
-import ReportDetail from '../pages/ReportDetail';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Upload from './pages/Upload';
+
+
 
 // Clinic specific pages
-import ClinicDashboard from '../pages/clinic/ClinicDashboard';
-import PatientList from '../pages/clinic/PatientList';
-import PatientDetail from '../pages/clinic/PatientDetail';
+import ClinicDashboard from './pages/clinic/ClinicDashboard';
+import PatientList from './pages/clinic/PatientList';
+import PatientDetail from './pages/clinic/PatientDetail';
 
 // Government specific pages
-import GovDashboard from '../pages/government/GovDashboard';
-import PopulationInsights from '../pages/government/PopulationInsights';
-import HealthTrends from '../pages/government/HealthTrends';
+import GovDashboard from './pages/government/GovDashboard';
+import PopulationInsights from './pages/government/PopulationInsights';
+import HealthTrends from './pages/government/HealthTrends';
 
 // Other pages
-import Settings from '../pages/Settings';
-import Help from '../pages/Help';
-import NotFound from '../pages/NotFound';
+import Settings from './pages/Settings';
+import Help from './pages/help';
+import NotFound from './pages/NotFound';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, requiredRole = null }) => {

@@ -1,6 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-
 // Create a loading component
 const LoadingSpinner = () => (
   <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
@@ -34,6 +34,12 @@ const Home = lazy(() =>
 const Login = lazy(() => 
   import('./pages/Login.jsx').catch(() => ({ 
     default: () => <PlaceholderComponent name="Login" /> 
+  }))
+);
+
+const Register = lazy(() => 
+  import('./pages/Register.jsx').catch(() => ({
+    default: () => <PlaceholderComponent name="Register" /> 
   }))
 );
 
@@ -122,7 +128,7 @@ const HealthTrends = lazy(() =>
 );
 
 // Create fallback components for missing imports that don't have files yet
-const Register = () => <PlaceholderComponent name="Register" />;
+
 const Profile = () => <PlaceholderComponent name="Profile" />;
 const Reports = () => <PlaceholderComponent name="Reports" />;
 const ReportDetail = () => <PlaceholderComponent name="ReportDetail" />;
@@ -175,10 +181,11 @@ const AppRoutes = ({ user }) => {
           path="/login" 
           element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
         />
-        <Route 
-          path="/register" 
-          element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/dashboard" replace /> : <Register />}
         />
+        
 
         {/* Protected Routes - Common for all users */}
         <Route 

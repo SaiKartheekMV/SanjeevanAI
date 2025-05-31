@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import openai  # Optional: if using OpenAI API
+import openai  # type: ignore # Optional: if using OpenAI API
 import os
 
 logger = logging.getLogger(__name__)
